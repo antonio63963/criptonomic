@@ -19,6 +19,14 @@
                 placeholder="Например DOGE"
               />
             </div>
+
+            <!-- input helper -->
+
+           <div class="coinHelper-wrapper">
+              <span class="coinHelper" v-for="(coin, i) in inputHelp" :key="i">{{
+                coin
+              }}</span>
+           </div>
           </div>
         </div>
         <button
@@ -89,12 +97,12 @@
           VUE - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div class="bg-purple-800 border w-10"
-          v-for="(bar, ind) in normalizeGraph()"
-          :key="ind"
-          :style="{height: `${bar}%`}"
+          <div
+            class="bg-purple-800 border w-10"
+            v-for="(bar, ind) in normalizeGraph()"
+            :key="ind"
+            :style="{ height: `${bar}%` }"
           ></div>
-          
         </div>
         <button
           @click="sel = null"
@@ -135,10 +143,12 @@ export default {
   data() {
     return {
       key: "268b01a72755164d9511d58b6cca59c339df7892beafaf2673e5fbdc4770bd3b",
-      ticker: "default",
+      ticker: "",
       sel: null,
       graph: [],
       tickers: [],
+      coinlist: [],
+      inputHelp: [],
     };
   },
 
@@ -158,27 +168,59 @@ export default {
         this.tickers.find((t) => t.name === currentTicker.name).price =
           data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
 
-        if(this.sel?.name === currentTicker.name) {
-          this.graph.push(data.USD)
+        if (this.sel?.name === currentTicker.name) {
+          this.graph.push(data.USD);
         }
       }, 5000);
       this.ticker = "";
     },
     normalizeGraph() {
-      const maxValue = Math.max(...this.graph)
-      const minValue = Math.min(...this.graph)
-      return this.graph.map(g => 5+((g - minValue)*95)/(maxValue - minValue))
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      return this.graph.map(
+        (g) => 5 + ((g - minValue) * 95) / (maxValue - minValue)
+      );
     },
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
     },
     select(t) {
-      this.sel = t
-      this.graph = []
-    }
+      this.sel = t;
+      this.graph = [];
+    },
+  },
+
+  async mounted() {
+    let coinlist = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    );
+    const data = await coinlist.text();
+    this.coinlist = data.match(/(?<="Symbol":")[A-Z]+\b/g);
+  },
+  watch: {
+    ticker() {
+      const inp = this.ticker.toUpperCase();
+      console.log(inp);
+      let inputHelp = this.coinlist.filter((coin) => coin.match(inp));
+      console.log(inputHelp.indexOf(inp));
+      this.inputHelp = inp ? inputHelp.slice(0, 4) : [];
+      // if(this.inputHelp.length > 4) this.inputHelp.length = 4
+    },
   },
 };
 </script>
+
+<style scoped>
+.coinHelper {
+  font-size: 10px;
+  color: rgb(54, 54, 54);
+  background-color: rgba(141, 141, 141, 0.933);
+  padding: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+</style>
 
 
 

@@ -22,11 +22,14 @@
 
             <!-- input helper -->
 
-           <div class="coinHelper-wrapper">
-              <span class="coinHelper" v-for="(coin, i) in inputHelp" :key="i">{{
-                coin
-              }}</span>
-           </div>
+            <div class="coinHelper-wrapper" @click="completeInput($event)">
+              <span
+                class="coinHelper"
+                v-for="(coin, i) in inputHelp"
+                :key="i"
+                >{{ coin }}</span
+              >
+            </div>
           </div>
         </div>
         <button
@@ -173,6 +176,7 @@ export default {
         }
       }, 5000);
       this.ticker = "";
+      localStorage.setItem('crypto-list', JSON.stringify(this.tickers))
     },
     normalizeGraph() {
       const maxValue = Math.max(...this.graph);
@@ -188,23 +192,42 @@ export default {
       this.sel = t;
       this.graph = [];
     },
+    completeInput(e) {
+      const helpInp = e.target.textContent;
+      if (!this.tickers.find((t) => t.name === helpInp)) {
+        this.ticker = helpInp;
+        this.add();
+      } else {
+        return false;
+      }
+    },
+  
   },
 
-  async mounted() {
+  async created() {
     let coinlist = await fetch(
       "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
     );
+    // const data = await coinlist.json();
+    // this.coinlist = Object.keys(data.Data)
     const data = await coinlist.text();
     this.coinlist = data.match(/(?<="Symbol":")[A-Z]+\b/g);
+
+    
+// get coin list from localStorage
+    const tickerData = localStorage.getItem('crypto-list')
+      if(tickerData) {
+        this.tickers = JSON.parse(tickerData)
+
+      }
   },
   watch: {
     ticker() {
       const inp = this.ticker.toUpperCase();
+      const reg = new RegExp(`^${inp}`);
+      let inputHelp = this.coinlist.filter((coin) => coin.match(reg));
       console.log(inp);
-      let inputHelp = this.coinlist.filter((coin) => coin.match(inp));
-      console.log(inputHelp.indexOf(inp));
       this.inputHelp = inp ? inputHelp.slice(0, 4) : [];
-      // if(this.inputHelp.length > 4) this.inputHelp.length = 4
     },
   },
 };

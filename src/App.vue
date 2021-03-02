@@ -71,6 +71,7 @@
             <button
               class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               @click="page = page + 1"
+              v-if="hasNextPage"
             >
               Вперед
             </button>
@@ -240,7 +241,7 @@ export default {
       filtredTickers() {
       const start = (this.page - 1) * 6;
       const end = this.page * 6;
-      const filtredTickers = this.tickers.filter((t) => t.name.includes(this.filter))
+      const filtredTickers = this.tickers.filter((t) => t.name.includes(this.filter.toUpperCase()))
       this.hasNextPage = filtredTickers.length > end  
       return filtredTickers.slice(start, end);
     },
@@ -251,6 +252,10 @@ export default {
   },
 
   async created() {
+   const filterData = Object.fromEntries(new URL(window.location).searchParams.entries())
+    this.filter = filterData.filter
+    this.page = filterData.page
+  
     let coinlist = await fetch(
       "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
     );
@@ -280,6 +285,7 @@ export default {
     },
     filter() {
       this.page = 1
+      window.history.pushState(null, document.title, `${window.location.pathname}?filter=${this.filter}&page=${this.page}`)
     }
   },
 };

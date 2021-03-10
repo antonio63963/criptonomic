@@ -168,7 +168,7 @@
 </template>
 
 <script>
-import { loadTicker } from "./api.js";
+import { subscribeToTicker } from "./api.js";
 export default {
   name: "App",
   data() {
@@ -187,33 +187,43 @@ export default {
 
   methods: {
     formatPrice(price) {
+      if(price == '-') {
+        return price
+      }
       return price > 1 ? Number(price).toFixed(2) : Number(price).toPrecision(2);
     },
 
-    async updateTickers() {
-      if (!this.tickers.length) return false;
-      const exchangeData = await loadTicker(
-        this.tickers.map((ticker) => ticker.name)
-      );
-      this.tickers.forEach((ticker) => {
-        const price = exchangeData[ticker.name.toUpperCase()].USD;
-        ticker.price = price ? price : '-'
-      });
+    updateTickers(tickerName, newPrice) {
+      // if (!this.tickers.length) return false;
+      // const exchangeData = await loadTicker(
+      //   this.tickers.map((ticker) => ticker.name)
+      // );
+      // this.tickers.forEach((ticker) => {
+      //   const price = exchangeData[ticker.name.toUpperCase()].USD;
+      //   ticker.price = price ?? '-'
+      // });
+      
+      if(!tickerName) return 
+      this.tickers.find( ticker => ticker.name === tickerName).price = newPrice
     },
 
     add() {
       const currentTicker = {
-        name: this.ticker,
+        name: this.ticker.toUpperCase(),
         price: "-",
       };
       this.tickers = [...this.tickers, currentTicker];
+      subscribeToTicker(currentTicker.name, (newPrice) => {
+        this.updateTickers(currentTicker.name, newPrice)
+      })
       this.ticker = "";
+      this.filter = '';
+      
     },
 
     handleDelete(tickerToRemove) {
       if (this.selectedTicker == tickerToRemove) this.selectedTicker = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
-      // localStorage.setItem("crypto-list", JSON.stringify(this.tickers));
     },
 
     select(ticker) {
@@ -291,10 +301,14 @@ export default {
     }
 
     // get coin list from localStorage
-    const tickerData = localStorage.getItem("crypto-list");
+    const tickersData = localStorage.getItem("crypto-list");
 
-    if (tickerData) {
-      this.tickers = JSON.parse(tickerData);
+    if (tickersData) {
+      this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach(ticker => subscribeToTicker(ticker.name, (newPrice) => {
+       this.updateTickers(ticker.name, newPrice)
+        
+      }))
     }
     setInterval(this.updateTickers, 5000);
   },

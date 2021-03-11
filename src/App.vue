@@ -168,7 +168,7 @@
 </template>
 
 <script>
-import { subscribeToTicker } from "./api.js";
+import { subscribeToTicker, unscribeFromTicker } from "./api.js";
 export default {
   name: "App",
   data() {
@@ -202,9 +202,13 @@ export default {
       //   const price = exchangeData[ticker.name.toUpperCase()].USD;
       //   ticker.price = price ?? '-'
       // });
+      // console.log(this.selectedTicker?.name || null);
       
       if(!tickerName) return 
-      this.tickers.find( ticker => ticker.name === tickerName).price = newPrice
+      this.tickers.find(ticker => {
+        if(ticker.name == tickerName) this.graph.push(newPrice)
+       return ticker.name == tickerName
+        }).price = newPrice
     },
 
     add() {
@@ -224,6 +228,7 @@ export default {
     handleDelete(tickerToRemove) {
       if (this.selectedTicker == tickerToRemove) this.selectedTicker = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
+      unscribeFromTicker(tickerToRemove.name)
     },
 
     select(ticker) {
@@ -267,6 +272,10 @@ export default {
     normalizeGraph() {
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
+        if (maxValue === minValue) {
+        return this.graph.map(() => 50);
+      }
+
       return this.graph.map(
         (g) => 5 + ((g - minValue) * 95) / (maxValue - minValue)
       );
